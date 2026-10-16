@@ -1,0 +1,22 @@
+# Builds the master server's Docker image on Linux and checks it answers (master/README.md).
+name: master server
+on:
+  push:
+    paths:
+      - "master/**"
+      - "src/master_core.*"
+      - ".github/workflows/master.yml"
+  workflow_dispatch:
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the image
+        run: docker build -f master/Dockerfile -t h2gravemind-master .
+      - name: Run it and check it lists a game
+        run: |
+          docker run -d --name master -p 11770:11770/udp h2gravemind-master
+          sleep 2
+          python3 master/smoke_test.py 127.0.0.1 11770
+          docker logs master
