@@ -3,7 +3,8 @@
 The master server keeps the internet list of games. It is tiny and stateless:
 
 - **UDP 11770** only (no TCP, no HTTP).
-- Games (player-hosted lobbies and dedicated servers) send a heartbeat every 15 s; an entry expires after 45 s.
+- Games (player-hosted lobbies and dedicated servers) send a heartbeat every 15 s; an entry expires after 45 s,
+  or at once when the game says it closed (unlist).
 - Players' server browsers ask for the list; the master answers with the games of the **same protocol version**
   (it stores each game's info as opaque bytes, so it keeps working when the game's protocol changes — masters
   never need updating for a new game version).
@@ -60,3 +61,5 @@ Little endian, packed. Header (14 bytes): `u32 magic 0x424C3248 ("H2LB")`, `u8 p
 - type 10, list reply (master -> browser): the request's header with type 10 (same version and nonce), `u8
   count`, then `count` entries `{u32 IPv4, u16 port (both network byte order), info}`, at most 2 per packet,
   as many packets as needed (one with count 0 when the list is empty).
+- type 24, unlist (game -> master): header only. The game closed: the master drops it from the list at once
+  (instead of 45 s after its last heartbeat). Masters without it simply ignore the message.

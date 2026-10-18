@@ -28,7 +28,7 @@ constexpr int INVALID_SOCKET = -1;
 namespace
 {
     constexpr uint32_t kMagic = 0x424C3248;  // "H2LB"
-    constexpr uint8_t kHeartbeat = 8, kList = 9, kListReply = 10;
+    constexpr uint8_t kHeartbeat = 8, kList = 9, kListReply = 10, kUnlist = 24;
     constexpr size_t kHeaderSize = 14;        // u32 magic, u8 version, u8 type, u64 nonce
     constexpr size_t kMaxPacket = 1472;       // one UDP packet without fragmentation
     constexpr size_t kMinInfo = 16, kMaxInfo = kMaxPacket - kHeaderSize - 1 - 6;
@@ -161,6 +161,15 @@ int RunMaster(const MasterOptions& options)
                     it->second.version = version;
                     it->second.info.assign(buf + kHeaderSize, buf + n);
                     it->second.lastSeen = now;
+                }
+                else if (type == kUnlist)
+                {
+                    // the host closed its game: gone from the lists at once (not 45 s later)
+                    if (auto it = games.find(key); it != games.end())
+                    {
+                        log("master: " + HostName(it->second.info) + " closed (" + IpPort(key.first, key.second) + ")");
+                        games.erase(it);
+                    }
                 }
                 else if (type == kList)
                 {

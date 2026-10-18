@@ -38,3 +38,11 @@ other.sendto(struct.pack("<IBBQ", MAGIC, VERSION + 1, 9, 5), (host, port))
 data, _ = other.recvfrom(2048)
 assert data[14] == 0, "a different protocol version must not see the game"
 print("ok: another protocol version gets an empty list")
+
+# the game closes (unlist): gone from the list at once
+game.sendto(header(24, 0), (host, port))
+time.sleep(0.5)
+browser.sendto(header(9, 1235), (host, port))
+data, _ = browser.recvfrom(2048)
+assert data[14] == 0, "an unlisted game must leave the list"
+print("ok: an unlisted game leaves the list at once")
