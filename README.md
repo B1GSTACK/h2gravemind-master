@@ -63,3 +63,19 @@ Little endian, packed. Header (14 bytes): `u32 magic 0x424C3248 ("H2LB")`, `u8 p
   as many packets as needed (one with count 0 when the list is empty).
 - type 24, unlist (game -> master): header only. The game closed: the master drops it from the list at once
   (instead of 45 s after its last heartbeat). Masters without it simply ignore the message.
+
+NAT traversal (hosting without opening a port; games that don't know it never send these). An entry is `u8 family
+4, u32 IPv4 (network order), u16 port (big endian)`; IPv4 only for now.
+
+- type 40, introduce me (player -> master, exactly 128 bytes): header (nonce = the player's), `u8 flags 0`, the
+  game's entry as listed (19 bytes, zero filled), zero padding. The master answers type 42 `{u8 status: 0 ok, 1
+  unknown game, 2 too many requests; the player's own entry}` and sends the game type 41 `{the player's entry: the
+  address the request came from}` with the player's nonce. The game then sends a few type 43 packets to the player,
+  which open its router for the player's HELLO.
+- type 46, seen (master -> game, at most once a minute): `{the game's entry as the master sees it}`.
+- type 47, keepalive (game -> master every 4 s between heartbeats): header only, ignored; it keeps the way from the
+  master to the game open in the game's router.
+- type 48, relay request (player -> master, exactly 256 bytes): header, `u8 flags`, the game's entry (19 bytes), `u8
+  count`, `count` x `{u64 session, u16 ping ms}`, zero padding. Passed to the game as type 49 `{the player's entry, u8
+  count, the pings}`: the game moves to the relay server with the best ping for everyone.
+- Limits: 10 requests (40 and 48) per source address and 10 s, 30 introductions per game and 10 s.

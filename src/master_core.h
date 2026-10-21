@@ -4,6 +4,8 @@
 // and the game's info bytes), entries expire after 45 s, and a list request (type 9) gets the entries of its own
 // protocol version (type 10 replies: u8 count, then {u32 ipv4, u16 port, info} entries, at most 2 per packet). So
 // masters run by others keep working when the game's protocol changes.
+// NAT traversal: it also introduces a player to a listed game (types 40 -> 41 / 42), passes a player's relay pings
+// to the game (48 -> 49) and tells a game its public address (46), IPv4 only; games without it never send those.
 // Header (packed, little endian): u32 magic "H2LB", u8 version, u8 type, u64 nonce (echoed in the reply).
 #include <cstdint>
 #include <functional>
